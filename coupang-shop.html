@@ -471,20 +471,26 @@ function getCategoryTheme(catName){
 }
 
 function applyTheme(catName){
-  const theme = getCategoryTheme(catName);
+  const theme = catName === ALL_TAB ? DEFAULT_THEME : getCategoryTheme(catName);
   document.documentElement.style.setProperty('--accent', theme.accent);
   document.documentElement.style.setProperty('--accent-soft', theme.soft);
 }
 
+const ALL_TAB = '__all__';
+
 function buildTabs(){
   const cats = [...new Set(ALL_PRODUCTS.map(p => p.cat))];
-  currentCat = cats[0] || null;
+  currentCat = ALL_TAB;
   const nav = document.getElementById('tabs');
-  nav.innerHTML = cats.map((c, i) => {
+
+  const allBtn = `<button class="tab-btn active" data-cat="${ALL_TAB}" onclick="switchTab('${ALL_TAB}')">🗂️ 전체</button>`;
+  const catBtns = cats.map(c => {
     const theme = getCategoryTheme(c);
-    return `<button class="tab-btn${i===0 ? ' active' : ''}" data-cat="${c}" onclick="switchTab('${c.replace(/'/g,"\\'")}')">${theme.icon} ${c}</button>`;
+    return `<button class="tab-btn" data-cat="${c}" onclick="switchTab('${c.replace(/'/g,"\\'")}')">${theme.icon} ${c}</button>`;
   }).join('');
-  if (currentCat) applyTheme(currentCat);
+
+  nav.innerHTML = allBtn + catBtns;
+  applyTheme(currentCat);
 }
 
 function switchTab(cat){
@@ -525,7 +531,7 @@ function render(){
   const grid = document.getElementById('main-grid');
   const moreBtnWrap = document.getElementById('more-wrap');
 
-  let list = ALL_PRODUCTS.filter(p => p.cat === currentCat);
+  let list = currentCat === ALL_TAB ? [...ALL_PRODUCTS] : ALL_PRODUCTS.filter(p => p.cat === currentCat);
   if (currentQuery){
     list = list.filter(p => p.name.toLowerCase().includes(currentQuery));
   }
