@@ -256,6 +256,55 @@
     color:var(--ink-soft);
   }
 
+  #view-mode-select{
+    font-family:inherit;
+    font-size:13px;
+    padding:9px 12px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:#fff;
+    color:var(--ink-soft);
+  }
+
+  .title-list{
+    display:flex;
+    flex-direction:column;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--card-bg);
+    overflow:hidden;
+  }
+
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px 18px;
+    text-decoration:none;
+    color:inherit;
+    border-bottom:1px solid var(--line);
+  }
+
+  .title-row:last-child{ border-bottom:none; }
+
+  .title-row:hover{ background:var(--accent-soft); }
+
+  .title-row .cat-chip{
+    font-size:11px;
+    font-weight:700;
+    color:var(--accent);
+    white-space:nowrap;
+    margin-right:10px;
+  }
+
+  .title-row .name{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink);
+    flex:1;
+  }
+
   .scroll-fab{
     position:fixed;
     right:20px;
@@ -349,6 +398,10 @@
     <option value="100">100개씩 보기</option>
     <option value="all">전체 보기</option>
   </select>
+  <select id="view-mode-select" onchange="handleViewModeChange(this.value)">
+    <option value="card">카드로 보기</option>
+    <option value="title">제목만 보기</option>
+  </select>
   <span id="count-label" class="count-label"></span>
 </div>
 
@@ -391,6 +444,7 @@ let currentQuery = "";
 let currentSort = "newest";
 let pageSize = DEFAULT_PAGE_SIZE;
 let shownCount = DEFAULT_PAGE_SIZE;
+let viewMode = 'card';
 
 function priceToNumber(priceStr){
   const n = parseInt((priceStr || "").replace(/[^0-9]/g, ""), 10);
@@ -552,26 +606,43 @@ function render(){
 
   if (!visible.length){
     grid.innerHTML = `<p style="grid-column:1/-1;color:var(--ink-soft);">표시할 상품이 없습니다.</p>`;
+    grid.className = 'grid';
     moreBtnWrap.classList.add('hidden');
     return;
   }
 
-  grid.innerHTML = visible.map(p => `
-    <a class="card" href="${p.link}" target="_blank" rel="noopener sponsored">
-      <div class="thumb"><img src="${p.image}" alt="${p.name}" loading="lazy" referrerpolicy="unsafe-url" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></div>
-      <div class="body">
+  if (viewMode === 'title'){
+    grid.className = 'title-list';
+    grid.innerHTML = visible.map(p => `
+      <a class="title-row" href="${p.link}" target="_blank" rel="noopener sponsored">
         <span class="cat-chip">${getCategoryTheme(p.cat).icon} ${p.cat}</span>
         <span class="name">${p.name}</span>
-        <div class="price-row">
-          <span class="price">${formatPrice(p.price)}</span>
-          <span class="buy-btn">쿠팡 보기</span>
+      </a>
+    `).join('');
+  } else {
+    grid.className = 'grid';
+    grid.innerHTML = visible.map(p => `
+      <a class="card" href="${p.link}" target="_blank" rel="noopener sponsored">
+        <div class="thumb"><img src="${p.image}" alt="${p.name}" loading="lazy" referrerpolicy="unsafe-url" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></div>
+        <div class="body">
+          <span class="cat-chip">${getCategoryTheme(p.cat).icon} ${p.cat}</span>
+          <span class="name">${p.name}</span>
+          <div class="price-row">
+            <span class="price">${formatPrice(p.price)}</span>
+            <span class="buy-btn">쿠팡 보기</span>
+          </div>
         </div>
-      </div>
-    </a>
-  `).join('');
+      </a>
+    `).join('');
+  }
 
   moreBtnWrap.classList.toggle('hidden', shownCount >= list.length);
   document.getElementById('count-label').textContent = `${list.length}개 중 ${visible.length}개 표시`;
+}
+
+function handleViewModeChange(value){
+  viewMode = value;
+  render();
 }
 
 loadProducts();
