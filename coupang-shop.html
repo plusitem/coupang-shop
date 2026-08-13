@@ -361,10 +361,24 @@
     background:var(--tool-accent-soft);
   }
 
-  @media (max-width:480px){
-    .grid{ grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
-    .card .name{ font-size:13.5px; min-height:36px; }
-    .card .price{ font-size:15px; }
+  @media (max-width:600px){
+    main, header.hero, nav.tabs, .toolbar{ padding-left:14px; padding-right:14px; }
+    .grid{
+      grid-template-columns:repeat(2, 1fr);
+      gap:10px;
+    }
+    .card{ border-radius:10px; }
+    .card .body{ padding:10px 10px 12px; gap:5px; }
+    .card .name{ font-size:12.5px; line-height:1.4; min-height:34px; }
+    .card .price{ font-size:14px; }
+    .card .cat-chip{ font-size:10px; }
+    .card .buy-btn{ font-size:10.5px; padding:6px 9px; }
+    .toolbar{ gap:8px; }
+    #search-box{ min-width:0; flex:1 1 100%; order:1; }
+    #sort-select, #page-size-select, #view-mode-select{ font-size:12px; padding:8px 10px; flex:1 1 auto; }
+    .count-label{ order:5; width:100%; text-align:right; }
+    .title-row{ padding:11px 14px; }
+    .title-row .name{ font-size:13px; }
   }
 </style>
 </head>
