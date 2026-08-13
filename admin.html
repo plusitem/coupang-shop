@@ -414,10 +414,12 @@ function handleBannerCodePaste(html){
   if (img){
     const src = img.getAttribute('src') || '';
     const alt = (img.getAttribute('alt') || '').trim();
-    if (src){
+    if (src && !pendingImageDataUrl){
       document.getElementById('f-image-url').value = src;
       handleImageUrlInput(src);
       filled.push('이미지');
+    } else if (src && pendingImageDataUrl){
+      filled.push('이미지(직접 올린 파일 유지)');
     }
     if (alt && !document.getElementById('f-name').value.trim()){
       document.getElementById('f-name').value = alt;
