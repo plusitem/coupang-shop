@@ -103,8 +103,6 @@
     border-bottom-color:var(--accent);
   }
 
-  .tab-btn[data-cat="tools"].active{ --accent: var(--tool-accent); }
-
   main{
     max-width:1080px;
     margin:0 auto;
@@ -330,7 +328,7 @@
 <header class="hero">
   <div class="eyebrow header-serif">CURATED PICKS</div>
   <h1 class="title header-serif">득템연구소 &amp; 건강노트</h1>
-  <p class="subtitle">20년 현장 경험과 자가 실험을 거쳐 실제로 써보고 고른 물건들만 소개합니다.</p>
+  <p class="subtitle">20년 현장 경험과 자가 실험을 거쳐 써보고 고른 물건들도 있고, 편리하고 지금 인기 있는 아이템들도 함께 소개합니다.</p>
 </header>
 
 <nav class="tabs" id="tabs">
@@ -399,6 +397,11 @@ function priceToNumber(priceStr){
   return isNaN(n) ? 0 : n;
 }
 
+function formatPrice(priceStr){
+  const n = priceToNumber(priceStr);
+  return n.toLocaleString('ko-KR') + '원';
+}
+
 function parseCSV(text){
   const rows = [];
   let row = [], field = "", inQuotes = false;
@@ -453,13 +456,35 @@ async function loadProducts(){
   render();
 }
 
+const CATEGORY_THEMES = [
+  { keywords: ['건강','헬스','영양','비타민','다이어트','노트'], icon: '🌿', accent: '#3E6B54', soft: '#DCE8DF' },
+  { keywords: ['뷰티','미용','화장품','스킨'], icon: '💄', accent: '#B5576F', soft: '#F3DCE3' },
+  { keywords: ['가전','전자','디지털'], icon: '🔌', accent: '#3A5F8A', soft: '#DCE6F0' },
+  { keywords: ['공구','수리','도구'], icon: '🔧', accent: '#8A5A2E', soft: '#EDE0CF' },
+  { keywords: ['주방','생활','잡화','득템'], icon: '🧺', accent: '#B45A24', soft: '#F0DFCB' }
+];
+const DEFAULT_THEME = { icon: '🛍️', accent: '#4A5A7A', soft: '#DFE4EE' };
+
+function getCategoryTheme(catName){
+  const hit = CATEGORY_THEMES.find(t => t.keywords.some(kw => catName.includes(kw)));
+  return hit || DEFAULT_THEME;
+}
+
+function applyTheme(catName){
+  const theme = getCategoryTheme(catName);
+  document.documentElement.style.setProperty('--accent', theme.accent);
+  document.documentElement.style.setProperty('--accent-soft', theme.soft);
+}
+
 function buildTabs(){
   const cats = [...new Set(ALL_PRODUCTS.map(p => p.cat))];
   currentCat = cats[0] || null;
   const nav = document.getElementById('tabs');
-  nav.innerHTML = cats.map((c, i) =>
-    `<button class="tab-btn${i===0 ? ' active' : ''}" data-cat="${c}" onclick="switchTab('${c.replace(/'/g,"\\'")}')">${c}</button>`
-  ).join('');
+  nav.innerHTML = cats.map((c, i) => {
+    const theme = getCategoryTheme(c);
+    return `<button class="tab-btn${i===0 ? ' active' : ''}" data-cat="${c}" onclick="switchTab('${c.replace(/'/g,"\\'")}')">${theme.icon} ${c}</button>`;
+  }).join('');
+  if (currentCat) applyTheme(currentCat);
 }
 
 function switchTab(cat){
@@ -468,6 +493,7 @@ function switchTab(cat){
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.toggle('active', btn.dataset.cat === cat);
   });
+  applyTheme(cat);
   render();
 }
 
@@ -528,10 +554,10 @@ function render(){
     <a class="card" href="${p.link}" target="_blank" rel="noopener sponsored">
       <div class="thumb"><img src="${p.image}" alt="${p.name}" loading="lazy" referrerpolicy="unsafe-url" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></div>
       <div class="body">
-        <span class="cat-chip">${p.cat}</span>
+        <span class="cat-chip">${getCategoryTheme(p.cat).icon} ${p.cat}</span>
         <span class="name">${p.name}</span>
         <div class="price-row">
-          <span class="price">${p.price}</span>
+          <span class="price">${formatPrice(p.price)}</span>
           <span class="buy-btn">쿠팡 보기</span>
         </div>
       </div>
