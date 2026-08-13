@@ -339,7 +339,7 @@
       </div>
     </div>
     <label style="display:flex; align-items:center; gap:6px; font-weight:500; margin-top:4px;">
-      <input type="checkbox" id="gh-auto-save"> 등록할 때마다 자동으로 GitHub에 저장
+      <input type="checkbox" id="gh-auto-save" onchange="saveGithubConfig()"> 등록할 때마다 자동으로 GitHub에 저장
     </label>
     <div class="helper-row">
       <button class="ghost-btn" onclick="saveGithubConfig()">설정 저장</button>
@@ -599,7 +599,8 @@ function saveGithubConfig(){
     repo: document.getElementById('gh-repo').value.trim(),
     branch: document.getElementById('gh-branch').value.trim() || 'main',
     path: document.getElementById('gh-path').value.trim() || 'products.csv',
-    token: document.getElementById('gh-token').value.trim()
+    token: document.getElementById('gh-token').value.trim(),
+    autoSave: document.getElementById('gh-auto-save').checked
   };
   const status = document.getElementById('github-status');
 
@@ -622,6 +623,7 @@ function loadGithubConfigIntoForm(){
   document.getElementById('gh-branch').value = cfg.branch || 'main';
   document.getElementById('gh-path').value = cfg.path || 'products.csv';
   document.getElementById('gh-token').value = cfg.token || '';
+  document.getElementById('gh-auto-save').checked = !!cfg.autoSave;
 }
 
 async function getFileSha(cfg){
