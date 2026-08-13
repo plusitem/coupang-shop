@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상품 등록 | 득템연구소 & 건강노트</title>
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --ink:#211E1A;
+    --ink-soft:#5B564C;
+    --line:#DEDACE;
+    --tool-accent:#B45A24;
+    --tool-accent-soft:#F0DFCB;
+    --health-accent:#3E6B54;
+    --health-accent-soft:#DCE8DF;
+    --card-bg:#FFFFFF;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Pretendard","Noto Sans KR",-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .header-serif{ font-family:"Noto Serif KR","Georgia",serif; }
+
+  .notice{
+    background:var(--ink);
+    color:#EDE8DC;
+    text-align:center;
+    font-size:12px;
+    padding:8px 16px;
+  }
+
+  header{
+    max-width:900px;
+    margin:0 auto;
+    padding:40px 24px 8px;
+  }
+
+  h1{
+    font-size:clamp(24px, 3.4vw, 34px);
+    margin:0 0 8px;
+    font-weight:700;
+  }
+
+  p.sub{
+    color:var(--ink-soft);
+    font-size:14px;
+    margin:0 0 8px;
+    line-height:1.6;
+  }
+
+  main{
+    max-width:900px;
+    margin:0 auto;
+    padding:16px 24px 80px;
+    display:flex;
+    flex-direction:column;
+    gap:32px;
+  }
+
+  .panel{
+    background:var(--card-bg);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+  }
+
+  .panel h2{
+    font-size:16px;
+    margin:0 0 18px;
+    font-weight:700;
+  }
+
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:14px;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .field.full{ grid-column:1/-1; }
+
+  label{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+
+  input[type="text"], select{
+    font-family:inherit;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--ink);
+    width:100%;
+  }
+
+  input[type="text"]:focus, select:focus{
+    outline:2px solid var(--tool-accent);
+    outline-offset:1px;
+  }
+
+  .file-drop{
+    border:1.5px dashed var(--line);
+    border-radius:10px;
+    padding:16px;
+    text-align:center;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    position:relative;
+  }
+
+  .file-drop input[type="file"]{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    cursor:pointer;
+  }
+
+  .preview-thumb{
+    width:64px;
+    height:64px;
+    border-radius:8px;
+    object-fit:cover;
+    margin-top:10px;
+    border:1px solid var(--line);
+    display:none;
+  }
+
+  .submit-btn{
+    appearance:none;
+    border:none;
+    background:var(--tool-accent);
+    color:#fff;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    padding:12px 24px;
+    border-radius:999px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+
+  .submit-btn:hover{ opacity:0.92; }
+
+  .helper-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  .ghost-btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+
+  .ghost-btn:hover{ background:var(--tool-accent-soft); }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+
+  th, td{
+    text-align:left;
+    padding:10px 8px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+
+  th{
+    color:var(--ink-soft);
+    font-weight:600;
+    font-size:12px;
+  }
+
+  td.thumb-cell img{
+    width:40px;
+    height:40px;
+    border-radius:6px;
+    object-fit:cover;
+    display:block;
+  }
+
+  td.name-cell{
+    max-width:220px;
+  }
+
+  .del-btn{
+    appearance:none;
+    border:none;
+    background:transparent;
+    color:#a33;
+    font-size:12px;
+    cursor:pointer;
+    font-weight:600;
+  }
+
+  .empty-note{
+    color:var(--ink-soft);
+    font-size:13px;
+    padding:16px 0;
+  }
+
+  .status-msg{
+    font-size:12.5px;
+    color:var(--health-accent);
+    margin-top:10px;
+    min-height:16px;
+  }
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+
+<div class="notice">관리자 전용 등록 페이지입니다. 이 주소는 외부에 공유하지 마십시오.</div>
+
+<header>
+  <h1 class="header-serif">상품 등록</h1>
+  <p class="sub">이미지를 올리고 카테고리·상품명·가격·링크를 입력해 등록하면 목록에 쌓입니다. 등록이 끝나면 아래에서 products.csv를 내려받아 coupang-shop.html과 같은 폴더에 덮어쓰면 됩니다.</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>새 상품 등록</h2>
+
+    <div class="field-row">
+      <div class="field full">
+        <label for="f-banner-code">쿠팡파트너스 배너 코드 붙여넣기 (선택 사항)</label>
+        <textarea id="f-banner-code" rows="3" placeholder='&lt;a href="..."&gt;&lt;img src="..." alt="상품명"&gt;&lt;/a&gt; 코드를 그대로 붙여넣으면 아래 링크·이미지·상품명이 자동으로 채워집니다.' oninput="handleBannerCodePaste(this.value)" onblur="handleBannerCodePaste(this.value)" onpaste="setTimeout(() => handleBannerCodePaste(this.value), 0)" style="width:100%; font-family:inherit; font-size:13px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; resize:vertical;"></textarea>
+        <div id="banner-parse-status" style="font-size:12px; color:var(--ink-soft); margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f-cat">카테고리</label>
+        <select id="f-cat" onchange="handleCatSelectChange(this.value)">
+          <option value="득템방">득템방</option>
+          <option value="건강노트">건강노트</option>
+          <option value="__new__">+ 새 카테고리 추가</option>
+        </select>
+        <div id="new-cat-row" style="display:none; gap:6px; margin-top:8px;">
+          <input type="text" id="f-new-cat" placeholder="새 카테고리 이름" style="flex:1;">
+          <button type="button" class="ghost-btn" onclick="addNewCategory()">추가</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-price">가격</label>
+        <input type="text" id="f-price" placeholder="예: 13,710원">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field full">
+        <label for="f-name">상품명</label>
+        <input type="text" id="f-name" placeholder="상품명을 입력합니다">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field full">
+        <label for="f-link">쿠팡 파트너스 링크</label>
+        <input type="text" id="f-link" placeholder="https://link.coupang.com/a/...">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field full">
+        <label for="f-image-url">이미지 URL (쿠팡파트너스 '이미지 복사' 주소를 붙여넣기)</label>
+        <input type="text" id="f-image-url" placeholder="https://... 를 붙여넣으면 아래 파일 업로드보다 우선 적용됩니다" oninput="handleImageUrlInput(this.value)">
+      </div>
+
+      <div class="field full">
+        <label>또는 이미지 파일 직접 업로드 (여러 장 선택 시 1초 간격 움직이는 GIF로 자동 합성됩니다)</label>
+        <div class="file-drop" id="drop-zone">
+          이미지를 1장 선택하면 정지 이미지로, 2장 이상 선택하면 움직이는 GIF로 등록됩니다
+          <input type="file" id="f-image" accept="image/*" multiple>
+        </div>
+        <img id="preview" class="preview-thumb" alt="미리보기" referrerpolicy="unsafe-url">
+        <div id="gif-status" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="registerProduct()">등록</button>
+    <div class="status-msg" id="status-msg"></div>
+  </section>
+
+  <section class="panel">
+    <h2>등록된 상품 목록 (<span id="total-count">0</span>개)</h2>
+    <div id="table-wrap">
+      <p class="empty-note">아직 등록된 상품이 없습니다.</p>
+    </div>
+    <div class="helper-row">
+      <button class="ghost-btn" onclick="downloadCSV()">CSV 다운로드</button>
+      <button class="ghost-btn" onclick="document.getElementById('csv-upload').click()">기존 products.csv 불러오기</button>
+      <input type="file" id="csv-upload" accept=".csv" style="display:none" onchange="handleCSVUpload(event)">
+    </div>
+  </section>
+</main>
+
+<script>
+let PRODUCTS = [];
+let pendingImageDataUrl = "";
+let pendingImageUrl = "";
+let isGifProcessing = false;
+
+const HEALTH_KEYWORDS = [
+  '비타민','칼슘','마그네슘','아연','콜라겐','오메가','유산균','프로틴','단백질',
+  '영양제','캡슐','엽산','루테인','밀크씨슬','홍삼','산삼','침향','녹용','엠비피','MBP',
+  '건강기능식품','효소','다이어트','관절','정,','정 ','서방형','추출물'
+];
+
+function guessCategory(name){
+  const hit = HEALTH_KEYWORDS.some(kw => name.includes(kw));
+  return hit ? '건강노트' : '득템방';
+}
+
+function handleBannerCodePaste(html){
+  const status = document.getElementById('banner-parse-status');
+  const trimmed = html.trim();
+  if (!trimmed){
+    status.textContent = '';
+    return;
+  }
+
+  let doc;
+  try {
+    doc = new DOMParser().parseFromString(trimmed, 'text/html');
+  } catch (err){
+    status.style.color = '#a33';
+    status.textContent = '코드를 해석하지 못했습니다. 코드 전체를 다시 붙여넣어 주세요.';
+    return;
+  }
+
+  const a = doc.querySelector('a[href]');
+  const img = doc.querySelector('img[src]');
+
+  if (!a && !img){
+    status.style.color = '#a33';
+    status.textContent = '링크나 이미지 태그를 찾지 못했습니다. 쿠팡파트너스에서 준 코드 전체를 그대로 붙여넣어 주세요.';
+    return;
+  }
+
+  let filled = [];
+
+  if (a){
+    document.getElementById('f-link').value = a.getAttribute('href') || '';
+    filled.push('링크');
+  }
+
+  if (img){
+    const src = img.getAttribute('src') || '';
+    const alt = (img.getAttribute('alt') || '').trim();
+    if (src){
+      document.getElementById('f-image-url').value = src;
+      handleImageUrlInput(src);
+      filled.push('이미지');
+    }
+    if (alt && !document.getElementById('f-name').value.trim()){
+      document.getElementById('f-name').value = alt;
+      filled.push('상품명');
+
+      const guessed = guessCategory(alt);
+      ensureCategoryOption(guessed);
+      document.getElementById('f-cat').value = guessed;
+      handleCatSelectChange(guessed);
+      filled.push(`카테고리(${guessed})`);
+    }
+  }
+
+  status.style.color = 'var(--health-accent)';
+  status.textContent = `자동 입력됨: ${filled.join(', ')}. 가격만 확인해서 입력해 주세요.`;
+}
+
+function handleImageUrlInput(value){
+  pendingImageUrl = value.trim();
+  const preview = document.getElementById('preview');
+  const gifStatus = document.getElementById('gif-status');
+  if (pendingImageUrl){
+    preview.src = pendingImageUrl;
+    preview.style.display = 'block';
+    gifStatus.textContent = 'URL 이미지가 우선 적용됩니다. 파일 업로드는 무시됩니다.';
+  } else {
+    preview.style.display = 'none';
+    gifStatus.textContent = '';
+  }
+}
+
+// 페이지를 열면 같은 폴더의 products.csv를 자동으로 불러옵니다 (있는 경우).
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('products.csv', { cache: 'no-store' })
+    .then(res => res.ok ? res.text() : null)
+    .then(text => { if (text) loadFromCSVText(text); })
+    .catch(() => {});
+});
+
+document.getElementById('f-image').addEventListener('change', (e) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+
+  // 파일을 새로 선택하면 URL 입력은 비워 파일이 우선 적용되도록 함
+  pendingImageUrl = "";
+  document.getElementById('f-image-url').value = "";
+
+  const preview = document.getElementById('preview');
+  const gifStatus = document.getElementById('gif-status');
+
+  if (files.length === 1){
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingImageDataUrl = reader.result;
+      preview.src = pendingImageDataUrl;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(files[0]);
+    gifStatus.textContent = '';
+    return;
+  }
+
+  gifStatus.textContent = `이미지 ${files.length}장으로 GIF 합성 중입니다...`;
+  preview.style.display = 'none';
+  isGifProcessing = true;
+  setSubmitEnabled(false);
+
+  buildAnimatedGif(files)
+    .then(dataUrl => {
+      pendingImageDataUrl = dataUrl;
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      gifStatus.textContent = `움직이는 GIF로 합성되었습니다 (${files.length}장, 1초 간격).`;
+    })
+    .catch(err => {
+      console.error(err);
+      gifStatus.textContent = `GIF 합성에 실패했습니다: ${err.message || err}`;
+    })
+    .finally(() => {
+      isGifProcessing = false;
+      setSubmitEnabled(true);
+    });
+});
+
+function setSubmitEnabled(enabled){
+  const btn = document.getElementById('submit-btn');
+  if (!btn) return;
+  btn.disabled = !enabled;
+  btn.textContent = enabled ? '등록' : 'GIF 합성 중...';
+}
+
+function loadImage(file){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function drawCover(ctx, img, w, h){
+  const scale = Math.max(w / img.width, h / img.height);
+  const sw = w / scale, sh = h / scale;
+  const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+}
+
+let workerBlobUrlPromise = null;
+
+function getWorkerScriptUrl(){
+  if (!workerBlobUrlPromise){
+    workerBlobUrlPromise = fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js')
+      .then(res => {
+        if (!res.ok) throw new Error('워커 스크립트를 내려받지 못했습니다.');
+        return res.text();
+      })
+      .then(text => URL.createObjectURL(new Blob([text], { type: 'application/javascript' })));
+  }
+  return workerBlobUrlPromise;
+}
+
+async function buildAnimatedGif(files){
+  const images = await Promise.all(files.map(loadImage));
+  const W = 400, H = 400;
+  const workerScript = await getWorkerScriptUrl();
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: W,
+    height: H,
+    workerScript
+  });
+
+  images.forEach(img => {
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    drawCover(ctx, img, W, H);
+    gif.addFrame(ctx, { delay: 1000, copy: true });
+  });
+
+  return new Promise((resolve, reject) => {
+    gif.on('finished', (blob) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    gif.on('abort', () => reject(new Error('GIF 생성이 중단되었습니다.')));
+    gif.render();
+  });
+}
+
+function escapeHtml(str){
+  return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function csvEscape(val){
+  const s = (val || "").toString();
+  if (s.includes(',') || s.includes('"') || s.includes('\n')){
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function handleCatSelectChange(value){
+  const row = document.getElementById('new-cat-row');
+  row.style.display = value === '__new__' ? 'flex' : 'none';
+}
+
+function addNewCategory(){
+  const input = document.getElementById('f-new-cat');
+  const name = input.value.trim();
+  if (!name) return;
+
+  const select = document.getElementById('f-cat');
+  const exists = Array.from(select.options).some(o => o.value === name);
+  if (!exists){
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    // "+ 새 카테고리 추가" 옵션 바로 앞에 삽입
+    select.insertBefore(opt, select.querySelector('option[value="__new__"]'));
+  }
+  select.value = name;
+  input.value = '';
+  document.getElementById('new-cat-row').style.display = 'none';
+}
+
+function ensureCategoryOption(name){
+  const select = document.getElementById('f-cat');
+  const exists = Array.from(select.options).some(o => o.value === name);
+  if (!exists){
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.insertBefore(opt, select.querySelector('option[value="__new__"]'));
+  }
+}
+
+function registerProduct(){
+  const status = document.getElementById('status-msg');
+
+  if (isGifProcessing){
+    status.style.color = '#a33';
+    status.textContent = 'GIF 합성이 아직 끝나지 않았습니다. 완료 문구가 뜬 뒤 다시 눌러주세요.';
+    return;
+  }
+
+  // 배너 코드가 남아있는데 아직 반영 안 된 경우를 대비해 등록 직전 한 번 더 파싱
+  const bannerCode = document.getElementById('f-banner-code').value.trim();
+  if (bannerCode){
+    handleBannerCodePaste(bannerCode);
+  }
+
+  const cat = document.getElementById('f-cat').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  const price = document.getElementById('f-price').value.trim();
+  const link = document.getElementById('f-link').value.trim();
+
+  if (!cat || cat === '__new__'){
+    status.style.color = '#a33';
+    status.textContent = '카테고리를 선택하거나 새로 추가해 주세요.';
+    return;
+  }
+  if (!name || !price || !link){
+    status.style.color = '#a33';
+    status.textContent = '상품명, 가격, 링크는 모두 입력해야 합니다.';
+    return;
+  }
+
+  const image = pendingImageUrl || pendingImageDataUrl || 'https://placehold.co/400x400/EDEAE0/999?text=No+Image';
+  const regDate = new Date().toISOString().slice(0, 10);
+
+  PRODUCTS.push({ cat, name, price, image, link, regDate });
+
+  // 입력 필드 초기화 (카테고리는 연속 등록 편의를 위해 유지)
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-link').value = '';
+  document.getElementById('f-image').value = '';
+  document.getElementById('f-image-url').value = '';
+  document.getElementById('f-banner-code').value = '';
+  document.getElementById('banner-parse-status').textContent = '';
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('gif-status').textContent = '';
+  pendingImageDataUrl = '';
+  pendingImageUrl = '';
+
+  status.style.color = 'var(--health-accent)';
+  status.textContent = `"${name}" 등록되었습니다.`;
+
+  refreshTable();
+}
+
+function deleteProduct(idx){
+  PRODUCTS.splice(idx, 1);
+  refreshTable();
+}
+
+function refreshTable(){
+  const wrap = document.getElementById('table-wrap');
+  document.getElementById('total-count').textContent = PRODUCTS.length;
+
+  // 등록된 상품에 쓰인 카테고리를 선택 목록에 반영
+  const cats = [...new Set(PRODUCTS.map(p => p.cat))];
+  cats.forEach(c => ensureCategoryOption(c));
+
+  if (!PRODUCTS.length){
+    wrap.innerHTML = '<p class="empty-note">아직 등록된 상품이 없습니다.</p>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr><th></th><th>카테고리</th><th>상품명</th><th>가격</th><th>등록일</th><th></th></tr>
+      </thead>
+      <tbody>
+        ${PRODUCTS.map((p, i) => `
+          <tr>
+            <td class="thumb-cell"><img src="${p.image}" alt="" referrerpolicy="unsafe-url" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></td>
+            <td>${escapeHtml(p.cat)}</td>
+            <td class="name-cell">${escapeHtml(p.name)}</td>
+            <td>${escapeHtml(p.price)}</td>
+            <td>${escapeHtml(p.regDate)}</td>
+            <td><button class="del-btn" onclick="deleteProduct(${i})">삭제</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function downloadCSV(){
+  if (!PRODUCTS.length){
+    alert('등록된 상품이 없습니다.');
+    return;
+  }
+  const header = ['카테고리','상품명','가격','이미지','링크','등록일'];
+  const lines = [header.join(',')];
+  PRODUCTS.forEach(p => {
+    lines.push([csvEscape(p.cat), csvEscape(p.name), csvEscape(p.price), csvEscape(p.image), csvEscape(p.link), csvEscape(p.regDate)].join(','));
+  });
+  const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'products.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i], next = text[i+1];
+    if (inQuotes){
+      if (c === '"' && next === '"'){ field += '"'; i++; }
+      else if (c === '"'){ inQuotes = false; }
+      else { field += c; }
+    } else {
+      if (c === '"'){ inQuotes = true; }
+      else if (c === ','){ row.push(field); field = ""; }
+      else if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c === '\r'){ /* skip */ }
+      else { field += c; }
+    }
+  }
+  if (field.length || row.length){ row.push(field); rows.push(row); }
+  const headers = rows.shift().map(h => h.trim());
+  return rows
+    .filter(r => r.some(v => v && v.trim()))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => obj[h] = (r[idx] || "").trim());
+      return {
+        cat: obj["카테고리"] || "기타",
+        name: obj["상품명"] || "",
+        price: obj["가격"] || "",
+        image: obj["이미지"] || "https://placehold.co/400x400/EDEAE0/999?text=No+Image",
+        link: obj["링크"] || "#",
+        regDate: obj["등록일"] || new Date().toISOString().slice(0, 10)
+      };
+    })
+    .filter(p => p.name && p.link !== "#");
+}
+
+function loadFromCSVText(text){
+  PRODUCTS = parseCSV(text);
+  refreshTable();
+}
+
+function handleCSVUpload(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => loadFromCSVText(reader.result);
+  reader.readAsText(file, 'utf-8');
+}
+</script>
+
+</body>
+</html>
