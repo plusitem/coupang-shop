@@ -248,6 +248,43 @@
     color:var(--ink-soft);
   }
 
+  #page-size-select{
+    font-family:inherit;
+    font-size:13px;
+    padding:9px 12px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:#fff;
+    color:var(--ink-soft);
+  }
+
+  .scroll-fab{
+    position:fixed;
+    right:20px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink-soft);
+    font-size:14px;
+    cursor:pointer;
+    box-shadow:0 6px 16px -6px rgba(33,30,26,0.3);
+    z-index:20;
+    display:none;
+  }
+
+  .scroll-fab:hover{
+    background:var(--tool-accent-soft);
+    color:var(--ink);
+  }
+
+  .scroll-fab.visible{ display:block; }
+
+  @media (max-width:480px){
+    .scroll-fab{ width:38px; height:38px; font-size:12px; right:14px; }
+  }
+
   .count-label{
     font-size:12px;
     color:var(--ink-soft);
@@ -308,6 +345,12 @@
     <option value="price_desc">가격 높은순</option>
     <option value="name">이름순</option>
   </select>
+  <select id="page-size-select" onchange="handlePageSizeChange(this.value)">
+    <option value="30">30개씩 보기</option>
+    <option value="50">50개씩 보기</option>
+    <option value="100">100개씩 보기</option>
+    <option value="all">전체 보기</option>
+  </select>
   <span id="count-label" class="count-label"></span>
 </div>
 
@@ -317,6 +360,9 @@
     <button class="more-btn" onclick="loadMore()">더보기</button>
   </div>
 </main>
+
+<button id="scroll-top-btn" class="scroll-fab" style="bottom:76px;" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로" aria-label="맨 위로">▲</button>
+<button id="scroll-bottom-btn" class="scroll-fab" style="bottom:20px;" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="맨 아래로" aria-label="맨 아래로">▼</button>
 
 <footer>
   본 페이지의 상품 링크는 쿠팡 파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있으며, 이는 쿠팡의 가격 정책과는 무관합니다.<br>
@@ -339,13 +385,14 @@
    ============================================================ */
 const SHEET_CSV_URL = ""; // 예: "https://docs.google.com/spreadsheets/d/e/2PACX-xxxx/pub?output=csv"
 const LOCAL_CSV_FALLBACK = "products.csv";
-const PAGE_SIZE = 60; // 한 번에 보여줄 카드 개수 (더보기 클릭 시 추가 로드)
+const DEFAULT_PAGE_SIZE = 30; // 한 번에 보여줄 기본 카드 개수
 
 let ALL_PRODUCTS = [];
 let currentCat = null;
 let currentQuery = "";
 let currentSort = "newest";
-let shownCount = PAGE_SIZE;
+let pageSize = DEFAULT_PAGE_SIZE;
+let shownCount = DEFAULT_PAGE_SIZE;
 
 function priceToNumber(priceStr){
   const n = parseInt((priceStr || "").replace(/[^0-9]/g, ""), 10);
@@ -417,7 +464,7 @@ function buildTabs(){
 
 function switchTab(cat){
   currentCat = cat;
-  shownCount = PAGE_SIZE;
+  shownCount = pageSize;
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.toggle('active', btn.dataset.cat === cat);
   });
@@ -426,18 +473,25 @@ function switchTab(cat){
 
 function handleSearch(value){
   currentQuery = value.trim().toLowerCase();
-  shownCount = PAGE_SIZE;
+  shownCount = pageSize;
   render();
 }
 
 function handleSort(value){
   currentSort = value;
-  shownCount = PAGE_SIZE;
+  shownCount = pageSize;
   render();
 }
 
+function handlePageSizeChange(value){
+  pageSize = value === 'all' ? Infinity : parseInt(value, 10);
+  shownCount = pageSize;
+  render();
+  window.scrollTo({ top: document.getElementById('main-grid').offsetTop - 20, behavior: 'smooth' });
+}
+
 function loadMore(){
-  shownCount += PAGE_SIZE;
+  shownCount += (pageSize === Infinity ? DEFAULT_PAGE_SIZE : pageSize);
   render();
 }
 
@@ -489,6 +543,20 @@ function render(){
 }
 
 loadProducts();
+
+function updateScrollButtons(){
+  const topBtn = document.getElementById('scroll-top-btn');
+  const bottomBtn = document.getElementById('scroll-bottom-btn');
+  const scrollY = window.scrollY;
+  const nearBottom = window.innerHeight + scrollY >= document.body.scrollHeight - 40;
+
+  topBtn.classList.toggle('visible', scrollY > 400);
+  bottomBtn.classList.toggle('visible', scrollY > 200 && !nearBottom);
+}
+
+window.addEventListener('scroll', updateScrollButtons);
+window.addEventListener('resize', updateScrollButtons);
+updateScrollButtons();
 </script>
 
 </body>
