@@ -300,7 +300,7 @@
           이미지를 1장 선택하면 정지 이미지로, 2장 이상 선택하면 움직이는 GIF로 등록됩니다
           <input type="file" id="f-image" accept="image/*" multiple>
         </div>
-        <img id="preview" class="preview-thumb" alt="미리보기" referrerpolicy="unsafe-url">
+        <img id="preview" class="preview-thumb" alt="미리보기" referrerpolicy="no-referrer">
         <div id="gif-status" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
       </div>
     </div>
@@ -838,7 +838,7 @@ function refreshTable(){
       <tbody>
         ${PRODUCTS.map((p, i) => `
           <tr>
-            <td class="thumb-cell"><img src="${p.image}" alt="" referrerpolicy="unsafe-url" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></td>
+            <td class="thumb-cell"><img src="${p.image}" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></td>
             <td>${escapeHtml(p.cat)}</td>
             <td class="name-cell">${escapeHtml(p.name)}</td>
             <td>${escapeHtml(p.price)}</td>
