@@ -274,6 +274,42 @@
     color:var(--ink-soft);
   }
 
+  .title-link{
+    text-decoration:none;
+    color:inherit;
+    display:inline-block;
+    cursor:pointer;
+  }
+
+  .title-link:hover .title{
+    opacity:0.75;
+  }
+
+  .view-toggle{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:999px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  .view-toggle-btn{
+    appearance:none;
+    border:none;
+    background:transparent;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 16px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+
+  .view-toggle-btn.active{
+    background:var(--accent);
+    color:#fff;
+  }
+
   .title-list{
     display:flex;
     flex-direction:column;
@@ -417,7 +453,9 @@
 
 <header class="hero">
   <div class="eyebrow header-serif">CURATED PICKS</div>
-  <h1 class="title header-serif">득템연구소 &amp; 건강노트</h1>
+  <a href="#" class="title-link" onclick="goHome(); return false;">
+    <h1 class="title header-serif">🏠 득템연구소 &amp; 건강노트</h1>
+  </a>
   <p class="subtitle">20년 현장 경험과 자가 실험을 거쳐 써보고 고른 물건들도 있고, 편리하고 지금 인기 있는 아이템들도 함께 소개합니다.</p>
 </header>
 
@@ -439,10 +477,10 @@
     <option value="100">100개씩 보기</option>
     <option value="all">전체 보기</option>
   </select>
-  <select id="view-mode-select" onchange="handleViewModeChange(this.value)">
-    <option value="card">카드로 보기</option>
-    <option value="title">제목만 보기</option>
-  </select>
+  <div class="view-toggle" role="group" aria-label="보기 방식">
+    <button type="button" id="view-btn-card" class="view-toggle-btn active" onclick="handleViewModeChange('card')">▦ 카드형</button>
+    <button type="button" id="view-btn-title" class="view-toggle-btn" onclick="handleViewModeChange('title')">☰ 목록형</button>
+  </div>
   <span id="count-label" class="count-label"></span>
 </div>
 
@@ -685,7 +723,22 @@ function render(){
 
 function handleViewModeChange(value){
   viewMode = value;
+  document.getElementById('view-btn-card').classList.toggle('active', value === 'card');
+  document.getElementById('view-btn-title').classList.toggle('active', value === 'title');
   render();
+}
+
+function goHome(){
+  document.getElementById('search-box').value = '';
+  currentQuery = '';
+  document.getElementById('sort-select').value = 'newest';
+  currentSort = 'newest';
+  document.getElementById('page-size-select').value = String(DEFAULT_PAGE_SIZE);
+  pageSize = DEFAULT_PAGE_SIZE;
+  shownCount = DEFAULT_PAGE_SIZE;
+  handleViewModeChange('card');
+  switchTab(ALL_TAB);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 loadProducts();
