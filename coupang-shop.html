@@ -694,7 +694,7 @@ function render(){
     grid.className = 'title-list';
     grid.innerHTML = visible.map(p => `
       <a class="title-row" href="${p.link}" target="_blank" rel="noopener sponsored">
-        <img class="title-thumb" src="${p.image}" alt="" loading="lazy" referrerpolicy="unsafe-url" onerror="this.onerror=null;this.src='https://placehold.co/80x80/EDEAE0/999?text=-';">
+        <img class="title-thumb" src="${p.image}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/80x80/EDEAE0/999?text=-';">
         <span class="cat-chip">${getCategoryTheme(p.cat).icon} ${p.cat}</span>
         <span class="name">${p.name}</span>
         <span class="title-price">${formatPrice(p.price)}</span>
@@ -704,7 +704,7 @@ function render(){
     grid.className = 'grid';
     grid.innerHTML = visible.map(p => `
       <a class="card" href="${p.link}" target="_blank" rel="noopener sponsored">
-        <div class="thumb"><img src="${p.image}" alt="${p.name}" loading="lazy" referrerpolicy="unsafe-url" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></div>
+        <div class="thumb"><img src="${p.image}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></div>
         <div class="body">
           <span class="cat-chip">${getCategoryTheme(p.cat).icon} ${p.cat}</span>
           <span class="name">${p.name}</span>
