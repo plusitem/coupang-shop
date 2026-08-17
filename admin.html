@@ -305,7 +305,9 @@
       </div>
     </div>
 
+    <div id="edit-mode-banner" class="status-msg" style="color:var(--tool-accent); display:none;">✏️ 수정 중입니다. 값을 고치고 "수정 완료"를 누르시거나, 취소를 누르시면 새 등록으로 돌아갑니다.</div>
     <button class="submit-btn" id="submit-btn" onclick="registerProduct()">등록</button>
+    <button class="ghost-btn" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none; margin-left:8px;">취소</button>
     <div class="status-msg" id="status-msg"></div>
   </section>
 
@@ -373,6 +375,7 @@ let PRODUCTS = [];
 let pendingImageDataUrl = "";
 let pendingImageUrl = "";
 let isGifProcessing = false;
+let editingIndex = null;
 
 const HEALTH_KEYWORDS = [
   '비타민','칼슘','마그네슘','아연','콜라겐','오메가','유산균','프로틴','단백질',
@@ -794,9 +797,14 @@ function registerProduct(){
   }
 
   const image = pendingImageUrl || pendingImageDataUrl || 'https://placehold.co/400x400/EDEAE0/999?text=No+Image';
-  const regDate = new Date().toISOString().slice(0, 10);
+  const wasEditing = editingIndex !== null;
+  const regDate = wasEditing ? PRODUCTS[editingIndex].regDate : new Date().toISOString().slice(0, 10);
 
-  PRODUCTS.push({ cat, name, price, image, link, regDate });
+  if (wasEditing){
+    PRODUCTS[editingIndex] = { cat, name, price, image, link, regDate };
+  } else {
+    PRODUCTS.push({ cat, name, price, image, link, regDate });
+  }
 
   // 입력 필드 초기화 (카테고리는 연속 등록 편의를 위해 유지)
   document.getElementById('f-name').value = '';
@@ -812,7 +820,14 @@ function registerProduct(){
   pendingImageUrl = '';
 
   status.style.color = 'var(--health-accent)';
-  status.textContent = `"${name}" 등록되었습니다.`;
+  status.textContent = wasEditing ? `"${name}" 수정되었습니다.` : `"${name}" 등록되었습니다.`;
+
+  if (wasEditing){
+    editingIndex = null;
+    document.getElementById('submit-btn').textContent = '등록';
+    document.getElementById('cancel-edit-btn').style.display = 'none';
+    document.getElementById('edit-mode-banner').style.display = 'none';
+  }
 
   refreshTable();
 
@@ -821,8 +836,72 @@ function registerProduct(){
   }
 }
 
+function editProduct(idx){
+  const p = PRODUCTS[idx];
+  if (!p) return;
+
+  editingIndex = idx;
+
+  ensureCategoryOption(p.cat);
+  document.getElementById('f-cat').value = p.cat;
+  handleCatSelectChange(p.cat);
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-price').value = p.price;
+  document.getElementById('f-link').value = p.link;
+  document.getElementById('f-banner-code').value = '';
+  document.getElementById('banner-parse-status').textContent = '';
+
+  const preview = document.getElementById('preview');
+  if (p.image && p.image.startsWith('data:')){
+    // 직접 올린 사진(GIF 등)은 그대로 유지, URL 칸은 비워둠
+    pendingImageDataUrl = p.image;
+    pendingImageUrl = '';
+    document.getElementById('f-image-url').value = '';
+    preview.src = resolveImageSrc(p.image);
+    preview.style.display = 'block';
+  } else {
+    pendingImageDataUrl = '';
+    pendingImageUrl = p.image || '';
+    document.getElementById('f-image-url').value = p.image || '';
+    if (p.image){
+      preview.src = resolveImageSrc(p.image);
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  document.getElementById('submit-btn').textContent = '수정 완료';
+  document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+  document.getElementById('edit-mode-banner').style.display = 'block';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit(){
+  editingIndex = null;
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-link').value = '';
+  document.getElementById('f-image-url').value = '';
+  document.getElementById('f-banner-code').value = '';
+  document.getElementById('banner-parse-status').textContent = '';
+  document.getElementById('preview').style.display = 'none';
+  pendingImageDataUrl = '';
+  pendingImageUrl = '';
+  document.getElementById('submit-btn').textContent = '등록';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  document.getElementById('edit-mode-banner').style.display = 'none';
+  document.getElementById('status-msg').textContent = '';
+}
+
 function deleteProduct(idx){
   PRODUCTS.splice(idx, 1);
+  if (editingIndex === idx){
+    cancelEdit();
+  } else if (editingIndex !== null && idx < editingIndex){
+    editingIndex -= 1;
+  }
   refreshTable();
 }
 
@@ -852,7 +931,10 @@ function refreshTable(){
             <td class="name-cell">${escapeHtml(p.name)}</td>
             <td>${escapeHtml(p.price)}</td>
             <td>${escapeHtml(p.regDate)}</td>
-            <td><button class="del-btn" onclick="deleteProduct(${i})">삭제</button></td>
+            <td>
+              <button class="del-btn" style="color:var(--tool-accent);" onclick="editProduct(${i})">수정</button>
+              <button class="del-btn" onclick="deleteProduct(${i})">삭제</button>
+            </td>
           </tr>
         `).join('')}
       </tbody>
