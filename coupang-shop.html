@@ -526,9 +526,9 @@
 <div class="toolbar">
   <input type="text" id="search-box" placeholder="상품명 검색" oninput="handleSearch(this.value)">
   <select id="sort-select" onchange="handleSort(this.value)">
-    <option value="featured" selected>추천순</option>
+    <option value="featured">추천순</option>
     <option value="newest">최신 등록순</option>
-    <option value="price_asc">가격 낮은순</option>
+    <option value="price_asc" selected>가격 낮은순</option>
     <option value="price_desc">가격 높은순</option>
     <option value="name">이름순</option>
   </select>
@@ -581,7 +581,7 @@ const DEFAULT_PAGE_SIZE = 30; // 한 번에 보여줄 기본 카드 개수
 let ALL_PRODUCTS = [];
 let currentCat = null;
 let currentQuery = "";
-let currentSort = "featured";
+let currentSort = "price_asc";
 let pageSize = DEFAULT_PAGE_SIZE;
 let shownCount = DEFAULT_PAGE_SIZE;
 let viewMode = 'card';
@@ -825,8 +825,8 @@ function handleViewModeChange(value){
 function goHome(){
   document.getElementById('search-box').value = '';
   currentQuery = '';
-  document.getElementById('sort-select').value = 'featured';
-  currentSort = 'featured';
+  document.getElementById('sort-select').value = 'price_asc';
+  currentSort = 'price_asc';
   document.getElementById('page-size-select').value = String(DEFAULT_PAGE_SIZE);
   pageSize = DEFAULT_PAGE_SIZE;
   shownCount = DEFAULT_PAGE_SIZE;
