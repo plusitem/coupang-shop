@@ -358,6 +358,14 @@
   </section>
 
   <section class="panel">
+    <h2>카테고리 관리</h2>
+    <p class="sub" style="margin-top:-6px;">카테고리 이름을 바꾸거나 정리할 수 있습니다. 이름을 바꾸면 그 카테고리에 속한 모든 상품이 함께 바뀝니다.</p>
+    <div id="cat-manage-wrap">
+      <p class="empty-note">카테고리가 없습니다.</p>
+    </div>
+  </section>
+
+  <section class="panel">
     <h2>등록된 상품 목록 (<span id="total-count">0</span>개)</h2>
     <div id="table-wrap">
       <p class="empty-note">아직 등록된 상품이 없습니다.</p>
@@ -473,6 +481,7 @@ function handleImageUrlInput(value){
 // 페이지를 열면 같은 폴더의 products.csv를 자동으로 불러옵니다 (있는 경우).
 window.addEventListener('DOMContentLoaded', () => {
   loadGithubConfigIntoForm();
+  refreshCategoryManager();
 
   fetch('products.csv', { cache: 'no-store' })
     .then(res => res.ok ? res.text() : null)
@@ -718,6 +727,99 @@ async function pushProductsToGithub(){
   }
 }
 
+function refreshCategoryManager(){
+  const wrap = document.getElementById('cat-manage-wrap');
+  const select = document.getElementById('f-cat');
+  const cats = Array.from(select.options)
+    .map(o => o.value)
+    .filter(v => v !== '__new__');
+
+  if (!cats.length){
+    wrap.innerHTML = '<p class="empty-note">카테고리가 없습니다.</p>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr><th>카테고리</th><th>상품 수</th><th></th></tr>
+      </thead>
+      <tbody>
+        ${cats.map(c => {
+          const count = PRODUCTS.filter(p => p.cat === c).length;
+          return `
+            <tr>
+              <td>${escapeHtml(c)}</td>
+              <td>${count}개</td>
+              <td>
+                <button class="del-btn" style="color:var(--tool-accent);" onclick="renameCategory('${c.replace(/'/g,"\\'")}')">이름변경</button>
+                <button class="del-btn" onclick="deleteCategory('${c.replace(/'/g,"\\'")}')">삭제</button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renameCategory(oldName){
+  const newName = window.prompt(`"${oldName}"의 새 이름을 입력해 주세요.`, oldName);
+  if (!newName || !newName.trim() || newName.trim() === oldName) return;
+  const trimmed = newName.trim();
+
+  PRODUCTS.forEach(p => {
+    if (p.cat === oldName) p.cat = trimmed;
+  });
+
+  const select = document.getElementById('f-cat');
+  const opt = Array.from(select.options).find(o => o.value === oldName);
+  if (opt){
+    opt.value = trimmed;
+    opt.textContent = trimmed;
+  }
+  if (select.value === oldName) select.value = trimmed;
+
+  refreshTable();
+
+  if (document.getElementById('gh-auto-save').checked){
+    pushProductsToGithub();
+  }
+}
+
+function deleteCategory(name){
+  const count = PRODUCTS.filter(p => p.cat === name).length;
+
+  if (count > 0){
+    const target = window.prompt(
+      `"${name}"에 속한 상품이 ${count}개 있습니다. 이 상품들을 옮길 다른 카테고리 이름을 입력해 주세요. (빈 칸으로 두시면 취소됩니다)`,
+      ''
+    );
+    if (!target || !target.trim()) return;
+    const trimmed = target.trim();
+    if (trimmed === name) return;
+
+    ensureCategoryOption(trimmed);
+    PRODUCTS.forEach(p => {
+      if (p.cat === name) p.cat = trimmed;
+    });
+  }
+
+  const select = document.getElementById('f-cat');
+  const opt = Array.from(select.options).find(o => o.value === name);
+  if (opt) opt.remove();
+  if (select.value === name){
+    const first = Array.from(select.options).find(o => o.value !== '__new__');
+    if (first) select.value = first.value;
+  }
+
+  refreshTable();
+
+  if (document.getElementById('gh-auto-save').checked){
+    pushProductsToGithub();
+  }
+}
+
 function escapeHtml(str){
   return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
@@ -912,6 +1014,8 @@ function refreshTable(){
   // 등록된 상품에 쓰인 카테고리를 선택 목록에 반영
   const cats = [...new Set(PRODUCTS.map(p => p.cat))];
   cats.forEach(c => ensureCategoryOption(c));
+
+  refreshCategoryManager();
 
   if (!PRODUCTS.length){
     wrap.innerHTML = '<p class="empty-note">아직 등록된 상품이 없습니다.</p>';
