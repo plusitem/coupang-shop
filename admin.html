@@ -270,7 +270,7 @@
       </div>
       <div class="field">
         <label for="f-price">가격</label>
-        <input type="text" id="f-price" placeholder="예: 13,710원">
+        <input type="text" id="f-price" placeholder="예: 13,710원" onkeydown="if(event.key==='Enter'){ event.preventDefault(); registerProduct(); }">
       </div>
     </div>
 
