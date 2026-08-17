@@ -444,12 +444,21 @@ function handleBannerCodePaste(html){
   status.textContent = `자동 입력됨: ${filled.join(', ')}. 가격만 확인해서 입력해 주세요.`;
 }
 
+function resolveImageSrc(url){
+  if (!url) return url;
+  if (url.startsWith('data:')) return url;
+  if (/coupangcdn\.com/i.test(url)){
+    return 'https://wsrv.nl/?url=' + encodeURIComponent(url);
+  }
+  return url;
+}
+
 function handleImageUrlInput(value){
   pendingImageUrl = value.trim();
   const preview = document.getElementById('preview');
   const gifStatus = document.getElementById('gif-status');
   if (pendingImageUrl){
-    preview.src = pendingImageUrl;
+    preview.src = resolveImageSrc(pendingImageUrl);
     preview.style.display = 'block';
     gifStatus.textContent = 'URL 이미지가 우선 적용됩니다. 파일 업로드는 무시됩니다.';
   } else {
@@ -838,7 +847,7 @@ function refreshTable(){
       <tbody>
         ${PRODUCTS.map((p, i) => `
           <tr>
-            <td class="thumb-cell"><img src="${p.image}" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></td>
+            <td class="thumb-cell"><img src="${resolveImageSrc(p.image)}" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></td>
             <td>${escapeHtml(p.cat)}</td>
             <td class="name-cell">${escapeHtml(p.name)}</td>
             <td>${escapeHtml(p.price)}</td>
