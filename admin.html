@@ -283,6 +283,13 @@
 
     <div class="field-row">
       <div class="field full">
+        <label for="f-promo">홍보 문구 (선택 사항)</label>
+        <input type="text" id="f-promo" placeholder="예: 이번주 특가! / 직접 써보고 반한 제품">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field full">
         <label for="f-link">쿠팡 파트너스 링크</label>
         <input type="text" id="f-link" placeholder="https://link.coupang.com/a/...">
       </div>
@@ -606,10 +613,10 @@ async function buildAnimatedGif(files){
 }
 
 function buildCSVText(){
-  const header = ['카테고리','상품명','가격','이미지','링크','등록일'];
+  const header = ['카테고리','상품명','홍보문구','가격','이미지','링크','등록일'];
   const lines = [header.join(',')];
   PRODUCTS.forEach(p => {
-    lines.push([csvEscape(p.cat), csvEscape(p.name), csvEscape(p.price), csvEscape(p.image), csvEscape(p.link), csvEscape(p.regDate)].join(','));
+    lines.push([csvEscape(p.cat), csvEscape(p.name), csvEscape(p.promo), csvEscape(p.price), csvEscape(p.image), csvEscape(p.link), csvEscape(p.regDate)].join(','));
   });
   return lines.join('\n');
 }
@@ -884,6 +891,7 @@ function registerProduct(){
 
   const cat = document.getElementById('f-cat').value.trim();
   const name = document.getElementById('f-name').value.trim();
+  const promo = document.getElementById('f-promo').value.trim();
   const price = document.getElementById('f-price').value.trim();
   const link = document.getElementById('f-link').value.trim();
 
@@ -903,13 +911,14 @@ function registerProduct(){
   const regDate = wasEditing ? PRODUCTS[editingIndex].regDate : new Date().toISOString().slice(0, 10);
 
   if (wasEditing){
-    PRODUCTS[editingIndex] = { cat, name, price, image, link, regDate };
+    PRODUCTS[editingIndex] = { cat, name, promo, price, image, link, regDate };
   } else {
-    PRODUCTS.push({ cat, name, price, image, link, regDate });
+    PRODUCTS.push({ cat, name, promo, price, image, link, regDate });
   }
 
   // 입력 필드 초기화 (카테고리는 연속 등록 편의를 위해 유지)
   document.getElementById('f-name').value = '';
+  document.getElementById('f-promo').value = '';
   document.getElementById('f-price').value = '';
   document.getElementById('f-link').value = '';
   document.getElementById('f-image').value = '';
@@ -948,6 +957,7 @@ function editProduct(idx){
   document.getElementById('f-cat').value = p.cat;
   handleCatSelectChange(p.cat);
   document.getElementById('f-name').value = p.name;
+  document.getElementById('f-promo').value = p.promo || '';
   document.getElementById('f-price').value = p.price;
   document.getElementById('f-link').value = p.link;
   document.getElementById('f-banner-code').value = '';
@@ -983,6 +993,7 @@ function editProduct(idx){
 function cancelEdit(){
   editingIndex = null;
   document.getElementById('f-name').value = '';
+  document.getElementById('f-promo').value = '';
   document.getElementById('f-price').value = '';
   document.getElementById('f-link').value = '';
   document.getElementById('f-image-url').value = '';
@@ -1032,7 +1043,7 @@ function refreshTable(){
           <tr>
             <td class="thumb-cell"><img src="${resolveImageSrc(p.image)}" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></td>
             <td>${escapeHtml(p.cat)}</td>
-            <td class="name-cell">${escapeHtml(p.name)}</td>
+            <td class="name-cell"><a href="${p.link}" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-decoration-color:var(--line);">${escapeHtml(p.name)}</a></td>
             <td>${escapeHtml(p.price)}</td>
             <td>${escapeHtml(p.regDate)}</td>
             <td>
@@ -1088,6 +1099,7 @@ function parseCSV(text){
       return {
         cat: obj["카테고리"] || "기타",
         name: obj["상품명"] || "",
+        promo: obj["홍보문구"] || "",
         price: obj["가격"] || "",
         image: obj["이미지"] || "https://placehold.co/400x400/EDEAE0/999?text=No+Image",
         link: obj["링크"] || "#",
