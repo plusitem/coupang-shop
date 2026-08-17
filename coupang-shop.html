@@ -530,6 +530,16 @@ function priceToNumber(priceStr){
   return isNaN(n) ? 0 : n;
 }
 
+function resolveImageSrc(url){
+  if (!url) return url;
+  if (url.startsWith('data:')) return url; // 직접 올린 사진/GIF는 그대로
+  if (/coupangcdn\.com/i.test(url)){
+    // 쿠팡 CDN은 출처(리퍼러) 차단이 있어, 중계 프록시를 거쳐 우회
+    return 'https://wsrv.nl/?url=' + encodeURIComponent(url);
+  }
+  return url;
+}
+
 function formatPrice(priceStr){
   const n = priceToNumber(priceStr);
   return n.toLocaleString('ko-KR') + '원';
@@ -694,7 +704,7 @@ function render(){
     grid.className = 'title-list';
     grid.innerHTML = visible.map(p => `
       <a class="title-row" href="${p.link}" target="_blank" rel="noopener sponsored">
-        <img class="title-thumb" src="${p.image}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/80x80/EDEAE0/999?text=-';">
+        <img class="title-thumb" src="${resolveImageSrc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/80x80/EDEAE0/999?text=-';">
         <span class="cat-chip">${getCategoryTheme(p.cat).icon} ${p.cat}</span>
         <span class="name">${p.name}</span>
         <span class="title-price">${formatPrice(p.price)}</span>
@@ -704,7 +714,7 @@ function render(){
     grid.className = 'grid';
     grid.innerHTML = visible.map(p => `
       <a class="card" href="${p.link}" target="_blank" rel="noopener sponsored">
-        <div class="thumb"><img src="${p.image}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></div>
+        <div class="thumb"><img src="${resolveImageSrc(p.image)}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';"></div>
         <div class="body">
           <span class="cat-chip">${getCategoryTheme(p.cat).icon} ${p.cat}</span>
           <span class="name">${p.name}</span>
