@@ -82,6 +82,71 @@
   }
 
   /* 카테고리 탭 */
+  .hot-section{
+    max-width:1080px;
+    margin:28px auto 0;
+    padding:0 24px;
+  }
+
+  .hot-title{
+    font-size:14px;
+    font-weight:800;
+    color:var(--ink);
+    margin-bottom:10px;
+  }
+
+  .hot-strip{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    padding-bottom:6px;
+    scrollbar-width:thin;
+  }
+
+  .hot-card{
+    flex:0 0 auto;
+    width:140px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--card-bg);
+    text-decoration:none;
+    color:inherit;
+    overflow:hidden;
+  }
+
+  .hot-card .hot-thumb{
+    width:100%;
+    aspect-ratio:1/1;
+    object-fit:cover;
+    background:var(--accent-soft);
+    display:block;
+  }
+
+  .hot-card .hot-body{
+    padding:8px 10px 10px;
+  }
+
+  .hot-card .hot-rank{
+    font-size:10px;
+    font-weight:800;
+    color:#fff;
+    background:#E24C4C;
+    display:inline-block;
+    padding:1px 6px;
+    border-radius:5px;
+    margin-bottom:4px;
+  }
+
+  .hot-card .hot-name{
+    font-size:11.5px;
+    font-weight:600;
+    line-height:1.35;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
   nav.tabs{
     max-width:1080px;
     margin:32px auto 0;
@@ -519,6 +584,11 @@
   <p class="subtitle">20년 현장 경험과 자가 실험을 거쳐 써보고 고른 물건들도 있고, 편리하고 지금 인기 있는 아이템들도 함께 소개합니다.</p>
 </header>
 
+<section id="hot-section" class="hot-section hidden">
+  <div class="hot-title">🔥 지금 핫한 상품</div>
+  <div id="hot-strip" class="hot-strip"></div>
+</section>
+
 <nav class="tabs" id="tabs">
   <!-- 카테고리 탭은 구글 시트 데이터를 불러온 뒤 자동 생성됩니다 -->
 </nav>
@@ -589,6 +659,68 @@ let viewMode = 'card';
 function priceToNumber(priceStr){
   const n = parseInt((priceStr || "").replace(/[^0-9]/g, ""), 10);
   return isNaN(n) ? 0 : n;
+}
+
+const CLICK_COUNTER_PREFIX = 'dtr_coupangshop_plusitem_';
+
+function hashKey(str){
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++){
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function productCounterKey(p){
+  return CLICK_COUNTER_PREFIX + hashKey(p.link || p.name || '');
+}
+
+function trackClick(key){
+  // 실패해도 사용자 경험에 영향 없도록 조용히 무시
+  fetch(`https://countapi.mileshilliard.com/api/v1/hit/${key}`).catch(() => {});
+}
+
+async function loadHotProducts(){
+  if (!ALL_PRODUCTS.length) return;
+
+  // 상품이 너무 많으면(200개 초과) 요청 부담을 피하기 위해 생략
+  if (ALL_PRODUCTS.length > 200) return;
+
+  const results = await Promise.allSettled(
+    ALL_PRODUCTS.map(p =>
+      fetch(`https://countapi.mileshilliard.com/api/v1/get/${productCounterKey(p)}`)
+        .then(res => res.ok ? res.json() : { value: 0 })
+        .then(data => ({ p, count: parseInt(data.value, 10) || 0 }))
+        .catch(() => ({ p, count: 0 }))
+    )
+  );
+
+  const ranked = results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value)
+    .filter(r => r.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  const section = document.getElementById('hot-section');
+  const strip = document.getElementById('hot-strip');
+
+  if (!ranked.length){
+    section.classList.add('hidden');
+    return;
+  }
+
+  strip.innerHTML = ranked.map((r, i) => `
+    <a class="hot-card" href="${r.p.link}" target="_blank" rel="noopener sponsored" onclick="trackClick('${productCounterKey(r.p)}')">
+      <img class="hot-thumb" src="${resolveImageSrc(r.p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/200x200/EDEAE0/999?text=-';">
+      <div class="hot-body">
+        <span class="hot-rank">${i + 1}위</span>
+        <div class="hot-name">${r.p.name}</div>
+      </div>
+    </a>
+  `).join('');
+  section.classList.remove('hidden');
 }
 
 function resolveImageSrc(url){
@@ -668,6 +800,7 @@ async function loadProducts(){
   }
   buildTabs();
   render();
+  loadHotProducts();
 }
 
 const CATEGORY_THEMES = [
@@ -780,7 +913,7 @@ function render(){
   if (viewMode === 'title'){
     grid.className = 'title-list';
     grid.innerHTML = visible.map(p => `
-      <a class="title-row" href="${p.link}" target="_blank" rel="noopener sponsored">
+      <a class="title-row" href="${p.link}" target="_blank" rel="noopener sponsored" onclick="trackClick('${productCounterKey(p)}')">
         <div class="title-thumb-wrap">
           <img class="title-thumb" src="${resolveImageSrc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/80x80/EDEAE0/999?text=-';">
           ${isNewProduct(p.regDate) ? '<span class="new-badge new-badge-sm">NEW</span>' : ''}
@@ -793,7 +926,7 @@ function render(){
   } else {
     grid.className = 'grid';
     grid.innerHTML = visible.map(p => `
-      <a class="card" href="${p.link}" target="_blank" rel="noopener sponsored">
+      <a class="card" href="${p.link}" target="_blank" rel="noopener sponsored" onclick="trackClick('${productCounterKey(p)}')">
         <div class="thumb">
           <img src="${resolveImageSrc(p.image)}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x400/EDEAE0/999?text=No+Image';">
           ${isNewProduct(p.regDate) ? '<span class="new-badge">NEW</span>' : ''}
