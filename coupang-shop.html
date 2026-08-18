@@ -168,12 +168,67 @@
     margin-bottom:-1px;
     cursor:pointer;
     border-bottom:3px solid transparent;
-    transition: color 0.2s ease, border-color 0.2s ease;
+    border-radius:6px 6px 0 0;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .tab-btn:hover{
+    color:var(--ink);
+    background:var(--accent-soft);
   }
 
   .tab-btn.active{
     color:var(--ink);
     border-bottom-color:var(--accent);
+  }
+
+  .cat-preview{
+    position:fixed;
+    display:none;
+    z-index:60;
+    width:240px;
+    max-height:320px;
+    overflow-y:auto;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:0 16px 32px -12px rgba(33,30,26,0.35);
+    padding:8px;
+  }
+
+  .cat-preview.visible{ display:block; }
+
+  .cat-preview-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:7px 8px;
+    border-radius:8px;
+    text-decoration:none;
+    color:var(--ink);
+    font-size:12.5px;
+    line-height:1.4;
+  }
+
+  .cat-preview-item:hover{ background:var(--accent-soft); }
+
+  .cat-preview-item img{
+    width:28px;
+    height:28px;
+    border-radius:6px;
+    object-fit:cover;
+    flex-shrink:0;
+    background:var(--accent-soft);
+  }
+
+  .cat-preview-more{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    padding:6px 8px;
+  }
+
+  @media (max-width:768px){
+    .cat-preview{ display:none !important; }
   }
 
   main{
@@ -197,12 +252,18 @@
     flex-direction:column;
     text-decoration:none;
     color:inherit;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    cursor:pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
 
   .card:hover{
-    transform:translateY(-4px);
-    box-shadow:0 14px 28px -14px rgba(33,30,26,0.28);
+    transform:translateY(-6px);
+    box-shadow:0 16px 30px -14px rgba(33,30,26,0.32);
+    border-color:var(--accent);
+  }
+
+  .card:hover .buy-btn{
+    transform:scale(1.06);
   }
 
   .card .thumb{
@@ -266,6 +327,8 @@
     padding:8px 12px;
     border-radius:999px;
     white-space:nowrap;
+    transition: transform 0.18s ease;
+    display:inline-block;
   }
 
   footer{
@@ -393,12 +456,31 @@
     padding:14px 18px;
     text-decoration:none;
     color:inherit;
+    cursor:pointer;
     border-bottom:1px solid var(--line);
+    border-left:3px solid transparent;
+    transition: background 0.15s ease, border-left-color 0.15s ease;
   }
 
   .title-row:last-child{ border-bottom:none; }
 
-  .title-row:hover{ background:var(--accent-soft); }
+  .title-row:hover{
+    background:var(--accent-soft);
+    border-left-color:var(--accent);
+  }
+
+  .title-row:hover .name{ text-decoration:underline; }
+
+  .title-row::after{
+    content:"›";
+    font-size:18px;
+    color:var(--ink-soft);
+    opacity:0;
+    transition:opacity 0.15s ease;
+    margin-left:4px;
+  }
+
+  .title-row:hover::after{ opacity:1; color:var(--accent); }
 
   .title-row .cat-chip{
     font-size:11px;
@@ -592,6 +674,8 @@
 <nav class="tabs" id="tabs">
   <!-- 카테고리 탭은 구글 시트 데이터를 불러온 뒤 자동 생성됩니다 -->
 </nav>
+
+<div id="cat-preview" class="cat-preview"></div>
 
 <div class="toolbar">
   <input type="text" id="search-box" placeholder="상품명 검색" oninput="handleSearch(this.value)">
@@ -830,14 +914,51 @@ function buildTabs(){
   currentCat = ALL_TAB;
   const nav = document.getElementById('tabs');
 
-  const allBtn = `<button class="tab-btn active" data-cat="${ALL_TAB}" onclick="switchTab('${ALL_TAB}')">🗂️ 전체</button>`;
+  const allBtn = `<button class="tab-btn active" data-cat="${ALL_TAB}" onclick="switchTab('${ALL_TAB}')" onmouseenter="showCatPreview(this, '${ALL_TAB}')" onmouseleave="hideCatPreview()">🗂️ 전체</button>`;
   const catBtns = cats.map(c => {
     const theme = getCategoryTheme(c);
-    return `<button class="tab-btn" data-cat="${c}" onclick="switchTab('${c.replace(/'/g,"\\'")}')">${theme.icon} ${c}</button>`;
+    const safeCat = c.replace(/'/g,"\\'");
+    return `<button class="tab-btn" data-cat="${c}" onclick="switchTab('${safeCat}')" onmouseenter="showCatPreview(this, '${safeCat}')" onmouseleave="hideCatPreview()">${theme.icon} ${c}</button>`;
   }).join('');
 
   nav.innerHTML = allBtn + catBtns;
   applyTheme(currentCat);
+}
+
+let catPreviewHideTimer = null;
+
+function showCatPreview(btnEl, catName){
+  clearTimeout(catPreviewHideTimer);
+
+  const list = catName === ALL_TAB ? ALL_PRODUCTS : ALL_PRODUCTS.filter(p => p.cat === catName);
+  if (!list.length) return;
+
+  const MAX_ITEMS = 8;
+  const shown = list.slice(0, MAX_ITEMS);
+  const remaining = list.length - shown.length;
+
+  const preview = document.getElementById('cat-preview');
+  preview.innerHTML = shown.map(p => `
+    <a class="cat-preview-item" href="${p.link}" target="_blank" rel="noopener sponsored" onclick="trackClick('${productCounterKey(p)}')">
+      <img src="${resolveImageSrc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/60x60/EDEAE0/999?text=-';">
+      <span>${p.name}</span>
+    </a>
+  `).join('') + (remaining > 0 ? `<div class="cat-preview-more">+${remaining}개 더 있습니다 (탭을 눌러 전체 보기)</div>` : '');
+
+  const rect = btnEl.getBoundingClientRect();
+  preview.style.left = Math.max(8, rect.left) + 'px';
+  preview.style.top = (rect.bottom + 6) + 'px';
+  preview.classList.add('visible');
+
+  // 팝업 자체에 마우스를 올려도 안 사라지도록
+  preview.onmouseenter = () => clearTimeout(catPreviewHideTimer);
+  preview.onmouseleave = hideCatPreview;
+}
+
+function hideCatPreview(){
+  catPreviewHideTimer = setTimeout(() => {
+    document.getElementById('cat-preview').classList.remove('visible');
+  }, 150);
 }
 
 function switchTab(cat){
