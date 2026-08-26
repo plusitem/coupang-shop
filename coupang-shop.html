@@ -147,6 +147,14 @@
     overflow:hidden;
   }
 
+
+  .hot-card .hot-price{
+    margin-top:6px;
+    font-size:13px;
+    font-weight:800;
+    color:#0B274C;
+  }
+
   nav.tabs{
     max-width:1080px;
     margin:32px auto 0;
@@ -1050,6 +1058,7 @@ async function loadHotProducts(){
       <div class="hot-body">
         <span class="hot-rank">${i + 1}위</span>
         <div class="hot-name">${r.p.name}</div>
+        <div class="hot-price">${formatPrice(r.p.price)}</div>
       </div>
     </a>
   `).join('');
