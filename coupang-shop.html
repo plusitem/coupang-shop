@@ -938,7 +938,7 @@
   <select id="page-size-select" onchange="handlePageSizeChange(this.value)">
     <option value="30">30개씩 보기</option>
     <option value="50">50개씩 보기</option>
-    <option value="100">100개씩 보기</option>
+    <option value="100" selected>100개씩 보기</option>
     <option value="all">전체 보기</option>
   </select>
   <div class="view-toggle" role="group" aria-label="보기 방식">
@@ -979,7 +979,7 @@
    ============================================================ */
 const SHEET_CSV_URL = ""; // 예: "https://docs.google.com/spreadsheets/d/e/2PACX-xxxx/pub?output=csv"
 const LOCAL_CSV_FALLBACK = "products.csv";
-const DEFAULT_PAGE_SIZE = 30; // 한 번에 보여줄 기본 카드 개수
+const DEFAULT_PAGE_SIZE = 100; // 한 번에 보여줄 기본 카드 개수
 
 let ALL_PRODUCTS = [];
 let currentCat = null;
