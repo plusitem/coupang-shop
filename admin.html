@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>상품 등록 | 득템연구소 & 건강노트</title>
+<title>상품 관리 | 득템개발연구소</title>
 <style>
   :root{
-    --paper:#F6F3EC;
-    --ink:#211E1A;
-    --ink-soft:#5B564C;
-    --line:#DEDACE;
-    --tool-accent:#B45A24;
-    --tool-accent-soft:#F0DFCB;
-    --health-accent:#3E6B54;
-    --health-accent-soft:#DCE8DF;
+    --paper:#F4F7FB;
+    --ink:#0B274C;
+    --ink-soft:#5D6B7E;
+    --line:#DCE3EC;
+    --tool-accent:#F3B000;
+    --tool-accent-soft:#FFF4CC;
+    --health-accent:#176B4D;
+    --health-accent-soft:#DDF1E8;
     --card-bg:#FFFFFF;
   }
   *{ box-sizing:border-box; }
@@ -231,6 +231,14 @@
     margin-top:10px;
     min-height:16px;
   }
+
+  header{position:relative;}
+  header::before{content:"ADMIN · DEUKTEM DEVELOPMENT LAB";display:inline-block;background:#0B274C;color:#fff;padding:6px 10px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:12px;}
+  .panel{box-shadow:0 8px 24px rgba(11,39,76,.05);}
+  .panel h2{color:#0B274C;}
+  .submit-btn{color:#0B274C;}
+  .notice{background:#071C38;color:#fff;}
+  @media(max-width:600px){header{padding:28px 16px 8px} main{padding:16px 16px 60px}.panel{padding:18px}.field-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -239,8 +247,8 @@
 <div class="notice">관리자 전용 등록 페이지입니다. 이 주소는 외부에 공유하지 마십시오.</div>
 
 <header>
-  <h1 class="header-serif">상품 등록</h1>
-  <p class="sub">이미지를 올리고 카테고리·상품명·가격·링크를 입력해 등록하면 목록에 쌓입니다. 등록이 끝나면 아래에서 products.csv를 내려받아 coupang-shop.html과 같은 폴더에 덮어쓰면 됩니다.</p>
+  <h1 class="header-serif">🧪 득템개발연구소 <span style="color:var(--tool-accent);">상품 관리</span></h1>
+  <p class="sub">써보고 · 비교하고 · 연구하고 · 추천하는 득템개발연구소 관리자 페이지입니다. 상품을 등록·수정하면 products.csv를 통해 고객 페이지와 연동할 수 있습니다.</p>
 </header>
 
 <main>
