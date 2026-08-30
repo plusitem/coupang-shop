@@ -234,6 +234,12 @@
 </style>
 </head>
 <body>
+
+<div style="position:fixed;top:10px;right:16px;z-index:9999;background:#111827;color:#fff;
+padding:7px 12px;border-radius:999px;font-size:12px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.12);">
+  관리자 v2.2 · GitHub 실시간 DB
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 
 <div class="notice">관리자 전용 등록 페이지입니다. 이 주소는 외부에 공유하지 마십시오.</div>
@@ -347,7 +353,8 @@
     <div class="field-row">
       <div class="field full">
         <label for="gh-token">개인 접근 토큰 (Fine-grained PAT, Contents 권한)</label>
-        <input type="text" id="gh-token" placeholder="ghp_ 로 시작하는 토큰">
+        <input type="password" id="gh-token" placeholder="ghp_ 로 시작하는 토큰" autocomplete="off">
+        <small style="color:var(--ink-soft);">토큰은 화면에 표시되지 않습니다.</small>
       </div>
     </div>
     <label style="display:flex; align-items:center; gap:6px; font-weight:500; margin-top:4px;">
