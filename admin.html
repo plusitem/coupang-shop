@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>상품 관리 | 득템개발연구소</title>
+<title>상품 등록 | 득템연구소 & 건강노트</title>
 <style>
   :root{
-    --paper:#F4F7FB;
-    --ink:#0B274C;
-    --ink-soft:#5D6B7E;
-    --line:#DCE3EC;
-    --tool-accent:#F3B000;
-    --tool-accent-soft:#FFF4CC;
-    --health-accent:#176B4D;
-    --health-accent-soft:#DDF1E8;
+    --paper:#F6F3EC;
+    --ink:#211E1A;
+    --ink-soft:#5B564C;
+    --line:#DEDACE;
+    --tool-accent:#B45A24;
+    --tool-accent-soft:#F0DFCB;
+    --health-accent:#3E6B54;
+    --health-accent-soft:#DCE8DF;
     --card-bg:#FFFFFF;
   }
   *{ box-sizing:border-box; }
@@ -231,14 +231,6 @@
     margin-top:10px;
     min-height:16px;
   }
-
-  header{position:relative;}
-  header::before{content:"ADMIN · DEUKTEM DEVELOPMENT LAB";display:inline-block;background:#0B274C;color:#fff;padding:6px 10px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:12px;}
-  .panel{box-shadow:0 8px 24px rgba(11,39,76,.05);}
-  .panel h2{color:#0B274C;}
-  .submit-btn{color:#0B274C;}
-  .notice{background:#071C38;color:#fff;}
-  @media(max-width:600px){header{padding:28px 16px 8px} main{padding:16px 16px 60px}.panel{padding:18px}.field-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -247,8 +239,8 @@
 <div class="notice">관리자 전용 등록 페이지입니다. 이 주소는 외부에 공유하지 마십시오.</div>
 
 <header>
-  <h1 class="header-serif">🧪 득템개발연구소 <span style="color:var(--tool-accent);">상품 관리</span></h1>
-  <p class="sub">써보고 · 비교하고 · 연구하고 · 추천하는 득템개발연구소 관리자 페이지입니다. 상품을 등록·수정하면 products.csv를 통해 고객 페이지와 연동할 수 있습니다.</p>
+  <h1 class="header-serif">상품 등록</h1>
+  <p class="sub">이미지를 올리고 카테고리·상품명·가격·링크를 입력해 등록하면 목록에 쌓입니다. 등록이 끝나면 아래에서 products.csv를 내려받아 coupang-shop.html과 같은 폴더에 덮어쓰면 됩니다.</p>
 </header>
 
 <main>
@@ -331,7 +323,7 @@
 
   <section class="panel">
     <h2>GitHub 자동 저장 설정</h2>
-    <p class="sub" style="margin-top:-6px;">한 번만 입력해두면, 등록할 때마다 GitHub 저장소의 products.csv를 자동으로 갱신해서 고객 페이지에 바로 반영합니다.</p>
+    <p class="sub" style="margin-top:-6px;">한 번만 설정하면 페이지를 열 때 GitHub의 최신 products.csv를 불러오고, 상품 삭제 시에도 실제 GitHub DB에 즉시 반영합니다.</p>
     <div class="field-row">
       <div class="field">
         <label for="gh-owner">GitHub 아이디</label>
@@ -402,6 +394,7 @@ let pendingImageDataUrl = "";
 let pendingImageUrl = "";
 let isGifProcessing = false;
 let editingIndex = null;
+let githubSyncBusy = false;
 
 const HEALTH_KEYWORDS = [
   '비타민','칼슘','마그네슘','아연','콜라겐','오메가','유산균','프로틴','단백질',
@@ -496,16 +489,74 @@ function handleImageUrlInput(value){
   }
 }
 
-// 페이지를 열면 같은 폴더의 products.csv를 자동으로 불러옵니다 (있는 경우).
-window.addEventListener('DOMContentLoaded', () => {
+// v2.1: 페이지를 열면 GitHub 저장소의 최신 products.csv를 우선 불러옵니다.
+// GitHub 설정이 없거나 API 조회에 실패하면 같은 폴더의 products.csv로 안전하게 대체합니다.
+window.addEventListener('DOMContentLoaded', async () => {
   loadGithubConfigIntoForm();
   refreshCategoryManager();
-
-  fetch('products.csv', { cache: 'no-store' })
-    .then(res => res.ok ? res.text() : null)
-    .then(text => { if (text) loadFromCSVText(text); })
-    .catch(() => {});
+  await initialLoadProducts();
 });
+
+function decodeGithubBase64(content){
+  const clean = (content || '').replace(/\s/g, '');
+  const binary = atob(clean);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+async function fetchLatestProductsFromGithub(cfg){
+  const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}?ref=${encodeURIComponent(cfg.branch)}&t=${Date.now()}`;
+  const res = await fetch(url, {
+    cache: 'no-store',
+    headers: {
+      'Authorization': `Bearer ${cfg.token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+  });
+  if (!res.ok) throw new Error(`GitHub 최신 DB 조회 실패 (${res.status})`);
+  const data = await res.json();
+  if (!data.content) throw new Error('GitHub 응답에 products.csv 내용이 없습니다.');
+  return decodeGithubBase64(data.content);
+}
+
+async function initialLoadProducts(){
+  const status = document.getElementById('github-status');
+  const cfg = getGithubConfig();
+
+  if (cfg && cfg.owner && cfg.repo && cfg.token){
+    try {
+      status.style.color = 'var(--ink-soft)';
+      status.textContent = 'GitHub의 최신 products.csv를 불러오는 중입니다...';
+      const text = await fetchLatestProductsFromGithub(cfg);
+      loadFromCSVText(text);
+      status.style.color = 'var(--health-accent)';
+      status.textContent = `GitHub 최신 상품 DB를 불러왔습니다. (${PRODUCTS.length}개)`;
+      return;
+    } catch (err){
+      console.warn(err);
+      status.style.color = '#a66';
+      status.textContent = 'GitHub 직접 조회에 실패해 공개 products.csv를 불러옵니다.';
+    }
+  }
+
+  try {
+    const res = await fetch(`products.csv?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`products.csv 조회 실패 (${res.status})`);
+    const text = await res.text();
+    loadFromCSVText(text);
+    if (status && !status.textContent){
+      status.style.color = 'var(--health-accent)';
+      status.textContent = `상품 DB를 불러왔습니다. (${PRODUCTS.length}개)`;
+    }
+  } catch (err){
+    console.error(err);
+    if (status){
+      status.style.color = '#a33';
+      status.textContent = '상품 DB를 불러오지 못했습니다.';
+    }
+  }
+}
 
 document.getElementById('f-image').addEventListener('change', (e) => {
   const files = Array.from(e.target.files || []);
@@ -714,34 +765,40 @@ async function putFile(cfg, contentBase64, sha){
   return res.json();
 }
 
-async function pushProductsToGithub(){
+async function pushProductsToGithub(options = {}){
   const status = document.getElementById('github-status');
   const cfg = getGithubConfig();
 
   if (!cfg){
     status.style.color = '#a33';
     status.textContent = '먼저 GitHub 설정을 입력하고 "설정 저장"을 눌러 주세요.';
-    return;
+    return false;
   }
-  if (!PRODUCTS.length){
-    status.style.color = '#a33';
-    status.textContent = '등록된 상품이 없습니다.';
-    return;
+  if (githubSyncBusy){
+    status.style.color = 'var(--ink-soft)';
+    status.textContent = 'GitHub 저장이 진행 중입니다. 잠시만 기다려 주세요.';
+    return false;
   }
 
+  githubSyncBusy = true;
   status.style.color = 'var(--ink-soft)';
-  status.textContent = 'GitHub에 저장하는 중입니다...';
+  status.textContent = options.message || 'GitHub에 저장하는 중입니다...';
 
   try {
+    // 상품이 0개여도 헤더만 있는 CSV를 저장할 수 있어 마지막 상품 삭제도 실제 DB에 반영됩니다.
     const csvText = buildCSVText();
     const sha = await getFileSha(cfg);
     await putFile(cfg, utf8ToBase64(csvText), sha);
     status.style.color = 'var(--health-accent)';
-    status.textContent = `GitHub에 저장되었습니다. 잠시 후 고객 페이지에 반영됩니다.`;
+    status.textContent = options.successMessage || `GitHub에 저장되었습니다. 현재 상품 ${PRODUCTS.length}개 · 잠시 후 고객 페이지에 반영됩니다.`;
+    return true;
   } catch (err){
     console.error(err);
     status.style.color = '#a33';
     status.textContent = err.message || 'GitHub 저장에 실패했습니다.';
+    return false;
+  } finally {
+    githubSyncBusy = false;
   }
 }
 
@@ -1023,14 +1080,46 @@ function cancelEdit(){
   document.getElementById('status-msg').textContent = '';
 }
 
-function deleteProduct(idx){
-  PRODUCTS.splice(idx, 1);
+async function deleteProduct(idx){
+  const p = PRODUCTS[idx];
+  if (!p) return;
+
+  if (!window.confirm(`"${p.name}" 상품을 삭제하시겠습니까?\n\n삭제하면 GitHub products.csv에도 바로 반영됩니다.`)){
+    return;
+  }
+
+  const cfg = getGithubConfig();
+  if (!cfg || !cfg.owner || !cfg.repo || !cfg.token){
+    const status = document.getElementById('github-status');
+    status.style.color = '#a33';
+    status.textContent = '삭제 전 GitHub 자동 저장 설정을 먼저 완료해 주세요. 실제 DB 보호를 위해 삭제를 중단했습니다.';
+    return;
+  }
+
+  const removed = PRODUCTS.splice(idx, 1)[0];
+  const oldEditingIndex = editingIndex;
+
   if (editingIndex === idx){
     cancelEdit();
   } else if (editingIndex !== null && idx < editingIndex){
     editingIndex -= 1;
   }
   refreshTable();
+
+  const ok = await pushProductsToGithub({
+    message: `"${removed.name}" 삭제 내용을 GitHub에 반영하는 중입니다...`,
+    successMessage: `"${removed.name}" 삭제 완료 · GitHub products.csv 반영됨 · 현재 ${PRODUCTS.length}개`
+  });
+
+  if (!ok){
+    // GitHub 저장 실패 시 브라우저 목록도 원상복구하여 화면/실DB 불일치를 막습니다.
+    PRODUCTS.splice(idx, 0, removed);
+    editingIndex = oldEditingIndex;
+    refreshTable();
+    const status = document.getElementById('github-status');
+    status.style.color = '#a33';
+    status.textContent += ' · 삭제를 취소하고 목록을 원상복구했습니다.';
+  }
 }
 
 function refreshTable(){
